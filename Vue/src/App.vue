@@ -1,14 +1,14 @@
 <template>
   <DxPopup
-      v-model:visible="popupVisible"
-      :drag-enabled="false"
-      :hide-on-outside-click="true"
-      :show-close-button="false"
-      :show-title="true"
+      v-model:visible='popupVisible'
+      :drag-enabled='false'
+      :hide-on-outside-click='true'
+      :show-close-button='false'
+      :show-title='true'
       title='Information'
       container='.dx-viewport'
-      width="280"
-      height="150"
+      width='280'
+      height='150'
   >
     <DxPosition
         at='center'
@@ -18,17 +18,17 @@
         widget='dxButton'
         toolbar='bottom'
         location='after'
-        :options="closeButtonOptions"
+        :options='closeButtonOptions'
     />
     <p>There is a recurrent appointment in this cell.</p>
   </DxPopup>
   <DxScheduler
-      :on-appointment-adding="handleAppointmentAdding"
-      :data-source="data"
-      :views="[{type: 'week'}]"
+      :on-appointment-adding='handleAppointmentAdding'
+      :data-source='data'
+      :views='[{type: "week"}]'
       current-view='week'
-      :current-date="new Date(2020, 10, 25)"
-      :start-day-hour="9"
+      :current-date='new Date(2020, 10, 25)'
+      :start-day-hour='9'
       width='100%'
       height='100%'
   />
@@ -40,7 +40,7 @@ import 'devextreme/dist/css/dx.material.blue.light.compact.css';
 import {DxScheduler} from 'devextreme-vue/scheduler';
 import {DxPopup, DxPosition, DxToolbarItem} from 'devextreme-vue/popup';
 import {rrulestr} from 'rrule';
-import {defaultData} from "./data";
+import {defaultData} from './data';
 
 export default {
   name: 'App',

@@ -1,0 +1,33 @@
+<div>
+  <dx-scheduler
+    (onAppointmentAdding)='handleAppointmentAdding($event)'
+    [dataSource]='dataSource'
+    [views]='[{type: "week"}]'
+    currentView='week'
+    [currentDate]='currentDate'
+    [startDayHour]='9'
+    width='100%'
+    height='100%'>
+  </dx-scheduler>
+  <dx-popup
+    [(visible)]='popupVisible'
+    [dragEnabled]='false'
+    [hideOnOutsideClick]='true'
+    [showCloseButton]='false'
+    [showTitle]='true'
+    title='Information'
+    container='.dx-viewport'
+    width='280'
+    height='150'
+  >
+    <p>There is a recurrent appointment in this cell.</p>
+    <dxi-toolbar-item
+      widget='dxButton'
+      toolbar='bottom'
+      location='after'
+      [options]='closeButtonOptions'
+    >
+    </dxi-toolbar-item>
+    <dxo-position at='center' my='center'></dxo-position>
+  </dx-popup>
+</div>
