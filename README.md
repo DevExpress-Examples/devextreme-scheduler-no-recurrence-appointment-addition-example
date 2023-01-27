@@ -6,3 +6,6 @@
 
 # Scheduler for DevExtreme - How to prevent adding new appointment to cells with recurrence appointment
 This example demonstrates how to prevent adding a new appointment to the cell which already recurrence date
+
+
+![demo](https://user-images.githubusercontent.com/53352872/215045862-94930fad-e27a-4291-9cb1-5f4d5ea20927.gif)
