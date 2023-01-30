@@ -6,24 +6,12 @@ $(() => {
         views: ['week'],
         currentView: 'week',
         currentDate: new Date(2020, 10, 25),
+        firstDayOfWeek: 0,
         startDayHour: 9,
         height: '100%',
         width: '100%',
-        onAppointmentAdding: function(e) {
-            const recurringAppointment = findRecurringAppointment(e.appointmentData);
-
-            if (recurringAppointment) {
-                const newAppointmentStartMinutes = e.appointmentData.startDate.getHours() * 60 + e.appointmentData.startDate.getMinutes();
-                const newAppointmentEndMinutes = e.appointmentData.endDate.getHours() * 60 + e.appointmentData.endDate.getMinutes();
-                const recurringAppointmentStartMinutes = recurringAppointment.startDate.getHours() * 60 + recurringAppointment.startDate.getMinutes();
-                const recurringAppointmentEndMinutes = recurringAppointment.endDate.getHours() * 60 + recurringAppointment.endDate.getMinutes();
-
-                if ((newAppointmentStartMinutes > recurringAppointmentStartMinutes && newAppointmentStartMinutes < recurringAppointmentEndMinutes) || (newAppointmentEndMinutes > recurringAppointmentStartMinutes && newAppointmentEndMinutes < recurringAppointmentEndMinutes)) {
-                    e.cancel = true;
-                    popup.show();
-                }
-            }
-        }
+        onAppointmentAdding: (e) => { handleAppointmentActions(e, e.appointmentData); },
+        onAppointmentUpdating: (e) => { handleAppointmentActions(e, e.newData, popup); }
     }).dxScheduler('instance');
 
     const popup = $('#popup').dxPopup({
@@ -60,18 +48,20 @@ const findRecurringAppointment = (appointmentData) => {
         if (appointment.recurrenceRule) {
             const recurrenceOptions = rrule.rrulestr(appointment.recurrenceRule);
             const weekDays = recurrenceOptions.options.byweekday;
-            const dateInArray = checkDateInArray(appointmentData.startDate);
+            const dateInArray = getDayFromArray(appointmentData.startDate);
             if (weekDays.includes(dateInArray)) {
                 return appointment;
             }
+            return false;
         }
+        return false;
     });
 }
 
-const checkDateInArray = (dateString) => {
+const getDayFromArray = (dateString) => {
     const weekDayNumbers = [6, 0, 1, 2, 3, 4, 5];
-    let date = new Date(dateString);
-    let day = date.getDay();
+    const date = new Date(dateString);
+    const day = date.getDay();
 
     return weekDayNumbers[day];
 }
@@ -81,3 +71,19 @@ const popupContentTemplate = function () {
         $(`<p>There is a recurrent appointment in this cell.</p>`),
     );
 };
+
+const handleAppointmentActions = (e, appointmentData, popup) => {
+    const recurringAppointment = findRecurringAppointment(appointmentData);
+
+    if (recurringAppointment) {
+        const newAppointmentStartMinutes = appointmentData.startDate.getHours() * 60 + appointmentData.startDate.getMinutes();
+        const newAppointmentEndMinutes = appointmentData.endDate.getHours() * 60 + appointmentData.endDate.getMinutes();
+        const recurringAppointmentStartMinutes = recurringAppointment.startDate.getHours() * 60 + recurringAppointment.startDate.getMinutes();
+        const recurringAppointmentEndMinutes = recurringAppointment.endDate.getHours() * 60 + recurringAppointment.endDate.getMinutes();
+
+        if ((newAppointmentStartMinutes > recurringAppointmentStartMinutes && newAppointmentStartMinutes < recurringAppointmentEndMinutes) || (newAppointmentEndMinutes > recurringAppointmentStartMinutes && newAppointmentEndMinutes < recurringAppointmentEndMinutes)) {
+            e.cancel = true;
+            popup.show();
+        }
+    }
+}

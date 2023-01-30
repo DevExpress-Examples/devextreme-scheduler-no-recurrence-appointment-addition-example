@@ -4,8 +4,7 @@
 [![](https://img.shields.io/badge/📖_How_to_use_DevExpress_Examples-e9f6fc?style=flat-square)](https://docs.devexpress.com/GeneralInformation/403183)
 <!-- default badges end -->
 
-# Scheduler for DevExtreme - How to prevent adding new appointment to cells with recurrence appointment
-This example demonstrates how to prevent adding a new appointment to the cell which already recurrence date
+# Scheduler for DevExtreme - How to prevent adding a new appointment or drag exist one to the cell with already recurrence date
+This example demonstrates how to prevent adding a new appointment or drag exist one to the cell with already recurrence date
 
-
-![demo](https://user-images.githubusercontent.com/53352872/215045862-94930fad-e27a-4291-9cb1-5f4d5ea20927.gif)
+![demo](https://user-images.githubusercontent.com/53352872/215532596-cd97cb04-e39d-4466-986f-cdf830968092.gif)

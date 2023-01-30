@@ -20,20 +20,20 @@ export class AppComponent {
     }
   };
 
-  checkDateInArray(dateString: string): number {
+  getDayFromArray(dateString: Date): number {
     const weekDayNumbers = [6, 0, 1, 2, 3, 4, 5];
-    let date = new Date(dateString);
-    let day = date.getDay();
+    const date = new Date(dateString);
+    const day = date.getDay();
 
     return weekDayNumbers[day];
   }
 
-  handleAppointmentAdding(e: any): void {
+  handleAppointmentActions(e: any, appointmentData: Appointment): void {
     const recurringAppointment = this.dataSource.find((appointment: Appointment) => {
       if (appointment.recurrenceRule) {
         const recurrenceOptions = rrulestr(appointment.recurrenceRule);
         const weekDays = recurrenceOptions.options.byweekday;
-        const dateInArray = this.checkDateInArray(e.appointmentData.startDate);
+        const dateInArray = this.getDayFromArray(appointmentData.startDate);
         if (weekDays.includes(dateInArray)) {
           return appointment;
         }
@@ -42,8 +42,8 @@ export class AppComponent {
     });
 
     if (recurringAppointment) {
-      const newAppointmentStartMinutes = e.appointmentData.startDate.getHours() * 60 + e.appointmentData.startDate.getMinutes();
-      const newAppointmentEndMinutes = e.appointmentData.endDate.getHours() * 60 + e.appointmentData.endDate.getMinutes();
+      const newAppointmentStartMinutes = appointmentData.startDate.getHours() * 60 + appointmentData.startDate.getMinutes();
+      const newAppointmentEndMinutes = appointmentData.endDate.getHours() * 60 + appointmentData.endDate.getMinutes();
       const recurringAppointmentStartMinutes = recurringAppointment.startDate.getHours() * 60 + recurringAppointment.startDate.getMinutes();
       const recurringAppointmentEndMinutes = recurringAppointment.endDate.getHours() * 60 + recurringAppointment.endDate.getMinutes();
 

@@ -4,7 +4,7 @@ import {Popup, Position, ToolbarItem} from 'devextreme-react/popup';
 import {defaultData} from './data.js';
 import {rrulestr} from 'rrule';
 import 'devextreme/dist/css/dx.common.css';
-import 'devextreme/dist/css/dx.material.blue.light.compact.css';
+import 'devextreme/dist/css/dx.light.css';
 import './App.css';
 
 const App = () => {
@@ -20,20 +20,20 @@ const App = () => {
         onClick: hideInfo,
     };
 
-    const checkDateInArray = (dateString) => {
+    const getDayFromArray = (dateString) => {
         const weekDayNumbers = [6, 0, 1, 2, 3, 4, 5];
-        let date = new Date(dateString);
-        let day = date.getDay();
+        const date = new Date(dateString);
+        const day = date.getDay();
 
         return weekDayNumbers[day];
     }
 
-    const handleAppointmentAdding = (e) => {
+    const handleAppointmentActions = (e, appointmentData) => {
         const recurringAppointment = data.find((appointment) => {
             if (appointment.recurrenceRule) {
                 const recurrenceOptions = rrulestr(appointment.recurrenceRule);
                 const weekDays = recurrenceOptions.options.byweekday;
-                const dateInArray = checkDateInArray(e.appointmentData.startDate);
+                const dateInArray = getDayFromArray(appointmentData.startDate);
 
                 if (weekDays.includes(dateInArray)) {
                     return appointment;
@@ -42,8 +42,8 @@ const App = () => {
         });
 
         if (recurringAppointment) {
-            const newAppointmentStartMinutes = e.appointmentData.startDate.getHours() * 60 + e.appointmentData.startDate.getMinutes();
-            const newAppointmentEndMinutes = e.appointmentData.endDate.getHours() * 60 + e.appointmentData.endDate.getMinutes();
+            const newAppointmentStartMinutes = appointmentData.startDate.getHours() * 60 + appointmentData.startDate.getMinutes();
+            const newAppointmentEndMinutes = appointmentData.endDate.getHours() * 60 + appointmentData.endDate.getMinutes();
             const recurringAppointmentStartMinutes = recurringAppointment.startDate.getHours() * 60 + recurringAppointment.startDate.getMinutes();
             const recurringAppointmentEndMinutes = recurringAppointment.endDate.getHours() * 60 + recurringAppointment.endDate.getMinutes();
 
@@ -85,12 +85,14 @@ const App = () => {
                 views={[{
                     type: 'week'
                 }]}
+                firstDayOfWeek={1}
                 defaultCurrentView='week'
                 defaultCurrentDate={new Date(2020, 10, 25)}
                 startDayHour={9}
                 width='100%'
                 height='100%'
-                onAppointmentAdding={handleAppointmentAdding}
+                onAppointmentAdding={(e) => { handleAppointmentActions(e, e.appointmentData); }}
+                onAppointmentUpdating={(e) => { handleAppointmentActions(e, e.newData); }}
             />
         </>
     );
