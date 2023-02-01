@@ -1,4 +1,4 @@
-import {defaultData} from './data.js';
+import { defaultData } from './data.js';
 
 $(() => {
     $('#scheduler').dxScheduler({
@@ -43,27 +43,13 @@ $(() => {
     }).dxPopup('instance');
 });
 
-const findRecurringAppointment = (appointmentData) => {
-    return defaultData.find((appointment) => {
-        if (appointment.recurrenceRule) {
-            const recurrenceOptions = rrule.rrulestr(appointment.recurrenceRule);
-            const weekDays = recurrenceOptions.options.byweekday;
-            const dateInArray = getDayFromArray(appointmentData.startDate);
-            if (weekDays.includes(dateInArray)) {
-                return appointment;
-            }
-            return false;
-        }
-        return false;
-    });
-}
-
-const getDayFromArray = (dateString) => {
-    const weekDayNumbers = [6, 0, 1, 2, 3, 4, 5];
-    const date = new Date(dateString);
-    const day = date.getDay();
-
-    return weekDayNumbers[day];
+function changeEndDate(currentEndDate, updatedEndDate) {
+    const current = new Date(currentEndDate);
+    const updated = new Date(updatedEndDate);
+    current.setFullYear(updated.getFullYear());
+    current.setMonth(updated.getMonth());
+    current.setDate(updated.getDate());
+    return current;
 }
 
 const popupContentTemplate = function () {
@@ -73,17 +59,30 @@ const popupContentTemplate = function () {
 };
 
 const handleAppointmentActions = (e, appointmentData, popup) => {
-    const recurringAppointment = findRecurringAppointment(appointmentData);
+    const recurringAppointment = defaultData.filter((appointment) => appointment?.recurrenceRule)
 
-    if (recurringAppointment) {
-        const newAppointmentStartMinutes = appointmentData.startDate.getHours() * 60 + appointmentData.startDate.getMinutes();
-        const newAppointmentEndMinutes = appointmentData.endDate.getHours() * 60 + appointmentData.endDate.getMinutes();
-        const recurringAppointmentStartMinutes = recurringAppointment.startDate.getHours() * 60 + recurringAppointment.startDate.getMinutes();
-        const recurringAppointmentEndMinutes = recurringAppointment.endDate.getHours() * 60 + recurringAppointment.endDate.getMinutes();
+    recurringAppointment.find((appointment) => {
+        const recurrenceOptions = rrule.rrulestr(appointment.recurrenceRule);
+        const rule = new rrule.RRule({
+            freq: recurrenceOptions.options.freq,
+            interval: recurrenceOptions.options.interval,
+            byweekday: recurrenceOptions.options.byweekday,
+            dtstart: appointment?.startDate,
+        })
+        const betweenDate = rule.between(e.component.getStartViewDate(), e.component.getEndViewDate())
+        const recurrenceAppointmentEndDate = changeEndDate(appointment.endDate, appointmentData.endDate);
 
-        if ((newAppointmentStartMinutes > recurringAppointmentStartMinutes && newAppointmentStartMinutes < recurringAppointmentEndMinutes) || (newAppointmentEndMinutes > recurringAppointmentStartMinutes && newAppointmentEndMinutes < recurringAppointmentEndMinutes)) {
-            e.cancel = true;
-            popup.show();
+        if (betweenDate.length > 0) {
+            betweenDate.find((date) => {
+                if (
+                    (appointmentData.startDate.getDate() === date.getDate()) &&
+                    (appointmentData.startDate.getMonth() === date.getMonth()) &&
+                    (appointmentData.startDate.getTime() >= date.getTime() && recurrenceAppointmentEndDate.getTime() >= appointmentData.endDate.getTime()))
+                {
+                    e.cancel = true;
+                    popup.show();
+                }
+            })
         }
-    }
+    })
 }

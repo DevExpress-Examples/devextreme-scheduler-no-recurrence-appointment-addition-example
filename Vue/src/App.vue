@@ -39,10 +39,10 @@
 <script>
 import 'devextreme/dist/css/dx.common.css';
 import 'devextreme/dist/css/dx.light.css';
-import {DxScheduler} from 'devextreme-vue/scheduler';
-import {DxPopup, DxPosition, DxToolbarItem} from 'devextreme-vue/popup';
-import {rrulestr} from 'rrule';
-import {defaultData} from './data';
+import { DxScheduler } from 'devextreme-vue/scheduler';
+import { DxPopup, DxPosition, DxToolbarItem } from 'devextreme-vue/popup';
+import { rrulestr, RRule } from 'rrule';
+import { defaultData } from './data';
 
 export default {
   name: 'App',
@@ -65,34 +65,41 @@ export default {
     }
   },
   methods: {
-    getDayFromArray(dateString) {
-      const weekDayNumbers = [6, 0, 1, 2, 3, 4, 5];
-      const date = new Date(dateString);
-      const day = date.getDay();
-
-      return weekDayNumbers[day];
+    changeEndDate(currentEndDate, updatedEndDate) {
+      const current = new Date(currentEndDate);
+      const updated = new Date(updatedEndDate);
+      current.setFullYear(updated.getFullYear());
+      current.setMonth(updated.getMonth());
+      current.setDate(updated.getDate());
+      return current;
     },
     handleAppointmentActions(e, appointmentData) {
-      const recurringAppointment = this.data.find((appointment) => {
-        if (appointment.recurrenceRule) {
-          const recurrenceOptions = rrulestr(appointment.recurrenceRule);
-          const weekDays = recurrenceOptions.options.byweekday;
-          const dateInArray = this.getDayFromArray(appointmentData.startDate);
-          if (weekDays.includes(dateInArray)) {
-            return appointment;
-          }
+      const recurringAppointment = this.data.filter((appointment) => appointment?.recurrenceRule)
+
+      recurringAppointment.find((appointment) => {
+        const recurrenceOptions = rrulestr(appointment.recurrenceRule);
+        const rule = new RRule({
+          freq: recurrenceOptions.options.freq,
+          interval: recurrenceOptions.options.interval,
+          byweekday: recurrenceOptions.options.byweekday,
+          dtstart: appointment?.startDate,
+        })
+        const betweenDate = rule.between(e.component.getStartViewDate(), e.component.getEndViewDate())
+        const recurrenceAppointmentEndDate = this.changeEndDate(appointment.endDate, appointmentData.endDate);
+
+        if (betweenDate.length > 0) {
+          betweenDate.find((date) => {
+            if (
+                (appointmentData.startDate.getDate() === date.getDate()) &&
+                (appointmentData.startDate.getMonth() === date.getMonth()) &&
+                (appointmentData.startDate.getTime() >= date.getTime() && recurrenceAppointmentEndDate.getTime() >= appointmentData.endDate.getTime()))
+            {
+              e.cancel = true;
+              this.popupVisible = true;
+            }
+          })
         }
-      });
-      if (recurringAppointment) {
-        const newAppointmentStartMinutes = appointmentData.startDate.getHours() * 60 + appointmentData.startDate.getMinutes();
-        const newAppointmentEndMinutes = appointmentData.endDate.getHours() * 60 + appointmentData.endDate.getMinutes();
-        const recurringAppointmentStartMinutes = recurringAppointment.startDate.getHours() * 60 + recurringAppointment.startDate.getMinutes();
-        const recurringAppointmentEndMinutes = recurringAppointment.endDate.getHours() * 60 + recurringAppointment.endDate.getMinutes();
-        if ((newAppointmentStartMinutes > recurringAppointmentStartMinutes && newAppointmentStartMinutes < recurringAppointmentEndMinutes) || (newAppointmentEndMinutes > recurringAppointmentStartMinutes && newAppointmentEndMinutes < recurringAppointmentEndMinutes)) {
-          e.cancel = true;
-          this.popupVisible = true;
-        }
-      }
+      })
     }
   }
 }

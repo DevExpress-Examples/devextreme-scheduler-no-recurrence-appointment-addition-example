@@ -1,7 +1,8 @@
 import { Component } from '@angular/core';
-import { rrulestr } from 'rrule';
-import {CloseButtonOptions} from './interfaces';
-import {appointments, Appointment} from './data/appointments'
+import { rrulestr, RRule } from 'rrule';
+import { CloseButtonOptions } from './interfaces';
+import { appointments, Appointment } from './data/appointments'
+import { AppointmentAddingEvent } from "devextreme/ui/scheduler";
 
 @Component({
   selector: 'demo-app',
@@ -20,37 +21,41 @@ export class AppComponent {
     }
   };
 
-  getDayFromArray(dateString: Date): number {
-    const weekDayNumbers = [6, 0, 1, 2, 3, 4, 5];
-    const date = new Date(dateString);
-    const day = date.getDay();
-
-    return weekDayNumbers[day];
+  changeEndDate(currentEndDate: Date, updatedEndDate: Date) {
+    const current = new Date(currentEndDate);
+    const updated = new Date(updatedEndDate);
+    current.setFullYear(updated.getFullYear());
+    current.setMonth(updated.getMonth());
+    current.setDate(updated.getDate());
+    return current;
   }
 
-  handleAppointmentActions(e: any, appointmentData: Appointment): void {
-    const recurringAppointment = this.dataSource.find((appointment: Appointment) => {
-      if (appointment.recurrenceRule) {
-        const recurrenceOptions = rrulestr(appointment.recurrenceRule);
-        const weekDays = recurrenceOptions.options.byweekday;
-        const dateInArray = this.getDayFromArray(appointmentData.startDate);
-        if (weekDays.includes(dateInArray)) {
-          return appointment;
-        }
-      }
-      return false
-    });
+  handleAppointmentActions(e: AppointmentAddingEvent, appointmentData: Appointment): void {
+    const recurringAppointment = this.dataSource.filter((appointment) => appointment?.recurrenceRule)
 
-    if (recurringAppointment) {
-      const newAppointmentStartMinutes = appointmentData.startDate.getHours() * 60 + appointmentData.startDate.getMinutes();
-      const newAppointmentEndMinutes = appointmentData.endDate.getHours() * 60 + appointmentData.endDate.getMinutes();
-      const recurringAppointmentStartMinutes = recurringAppointment.startDate.getHours() * 60 + recurringAppointment.startDate.getMinutes();
-      const recurringAppointmentEndMinutes = recurringAppointment.endDate.getHours() * 60 + recurringAppointment.endDate.getMinutes();
+    recurringAppointment.find((appointment) => {
+      const recurrenceOptions = rrulestr(appointment.recurrenceRule);
+      const rule = new RRule({
+        freq: recurrenceOptions.options.freq,
+        interval: recurrenceOptions.options.interval,
+        byweekday: recurrenceOptions.options.byweekday,
+        dtstart: appointment?.startDate,
+      })
+      const betweenDate = rule.between(e.component.getStartViewDate(), e.component.getEndViewDate())
+      const recurrenceAppointmentEndDate = this.changeEndDate(appointment.endDate, appointmentData.endDate);
 
-      if ((newAppointmentStartMinutes > recurringAppointmentStartMinutes && newAppointmentStartMinutes < recurringAppointmentEndMinutes) || (newAppointmentEndMinutes > recurringAppointmentStartMinutes && newAppointmentEndMinutes < recurringAppointmentEndMinutes)) {
-        e.cancel = true;
-        this.popupVisible = true;
+      if (betweenDate.length > 0) {
+        betweenDate.find((date) => {
+          if (
+            (appointmentData.startDate.getDate() === date.getDate()) &&
+            (appointmentData.startDate.getMonth() === date.getMonth()) &&
+            (appointmentData.startDate.getTime() >= date.getTime() && recurrenceAppointmentEndDate.getTime() >= appointmentData.endDate.getTime()))
+          {
+            e.cancel = true;
+            this.popupVisible = true;
+          }
+        })
       }
-    }
+    })
   }
 }

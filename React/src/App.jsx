@@ -1,8 +1,8 @@
-import {useState} from 'react';
+import { useState } from 'react';
 import Scheduler from 'devextreme-react/scheduler';
-import {Popup, Position, ToolbarItem} from 'devextreme-react/popup';
-import {defaultData} from './data.js';
-import {rrulestr} from 'rrule';
+import { Popup, Position, ToolbarItem } from 'devextreme-react/popup';
+import { defaultData } from './data.js';
+import { rrulestr, RRule } from 'rrule';
 import 'devextreme/dist/css/dx.common.css';
 import 'devextreme/dist/css/dx.light.css';
 import './App.css';
@@ -20,38 +20,42 @@ const App = () => {
         onClick: hideInfo,
     };
 
-    const getDayFromArray = (dateString) => {
-        const weekDayNumbers = [6, 0, 1, 2, 3, 4, 5];
-        const date = new Date(dateString);
-        const day = date.getDay();
-
-        return weekDayNumbers[day];
+    function changeEndDate(currentEndDate, updatedEndDate) {
+        const current = new Date(currentEndDate);
+        const updated = new Date(updatedEndDate);
+        current.setFullYear(updated.getFullYear());
+        current.setMonth(updated.getMonth());
+        current.setDate(updated.getDate());
+        return current;
     }
 
     const handleAppointmentActions = (e, appointmentData) => {
-        const recurringAppointment = data.find((appointment) => {
-            if (appointment.recurrenceRule) {
-                const recurrenceOptions = rrulestr(appointment.recurrenceRule);
-                const weekDays = recurrenceOptions.options.byweekday;
-                const dateInArray = getDayFromArray(appointmentData.startDate);
+        const recurringAppointment = data.filter((appointment) => appointment?.recurrenceRule)
 
-                if (weekDays.includes(dateInArray)) {
-                    return appointment;
-                }
+        recurringAppointment.find((appointment) => {
+            const recurrenceOptions = rrulestr(appointment.recurrenceRule);
+            const rule = new RRule({
+                freq: recurrenceOptions.options.freq,
+                interval: recurrenceOptions.options.interval,
+                byweekday: recurrenceOptions.options.byweekday,
+                dtstart: appointment?.startDate,
+            })
+            const betweenDate = rule.between(e.component.getStartViewDate(), e.component.getEndViewDate())
+            const recurrenceAppointmentEndDate = changeEndDate(appointment.endDate, appointmentData.endDate);
+
+            if (betweenDate.length > 0) {
+                betweenDate.find((date) => {
+                    if (
+                        (appointmentData.startDate.getDate() === date.getDate()) &&
+                        (appointmentData.startDate.getMonth() === date.getMonth()) &&
+                        (appointmentData.startDate.getTime() >= date.getTime() && recurrenceAppointmentEndDate.getTime() >= appointmentData.endDate.getTime()))
+                    {
+                        e.cancel = true;
+                        setPopupVisible(true);
+                    }
+                })
             }
-        });
-
-        if (recurringAppointment) {
-            const newAppointmentStartMinutes = appointmentData.startDate.getHours() * 60 + appointmentData.startDate.getMinutes();
-            const newAppointmentEndMinutes = appointmentData.endDate.getHours() * 60 + appointmentData.endDate.getMinutes();
-            const recurringAppointmentStartMinutes = recurringAppointment.startDate.getHours() * 60 + recurringAppointment.startDate.getMinutes();
-            const recurringAppointmentEndMinutes = recurringAppointment.endDate.getHours() * 60 + recurringAppointment.endDate.getMinutes();
-
-            if ((newAppointmentStartMinutes > recurringAppointmentStartMinutes && newAppointmentStartMinutes < recurringAppointmentEndMinutes) || (newAppointmentEndMinutes > recurringAppointmentStartMinutes && newAppointmentEndMinutes < recurringAppointmentEndMinutes)) {
-                e.cancel = true;
-                setPopupVisible(true);
-            }
-        }
+        })
     }
 
     return (
@@ -91,8 +95,12 @@ const App = () => {
                 startDayHour={9}
                 width='100%'
                 height='100%'
-                onAppointmentAdding={(e) => { handleAppointmentActions(e, e.appointmentData); }}
-                onAppointmentUpdating={(e) => { handleAppointmentActions(e, e.newData); }}
+                onAppointmentAdding={(e) => {
+                    handleAppointmentActions(e, e.appointmentData);
+                }}
+                onAppointmentUpdating={(e) => {
+                    handleAppointmentActions(e, e.newData);
+                }}
             />
         </>
     );
