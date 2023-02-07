@@ -21,16 +21,9 @@ export class AppComponent {
     }
   };
 
-  changeEndDate(currentEndDate: Date, updatedEndDate: Date) {
-    const current = new Date(currentEndDate);
-    const updated = new Date(updatedEndDate);
-    current.setFullYear(updated.getFullYear());
-    current.setMonth(updated.getMonth());
-    current.setDate(updated.getDate());
-    return current;
-  }
-
-  handleAppointmentActions(e: AppointmentAddingEvent, appointmentData: Appointment): void {
+  handleAppointmentActions = (e: AppointmentAddingEvent, appointmentData: Appointment): void => {
+    const startTime = appointmentData.startDate.getTime();
+    const endTime = appointmentData.endDate.getTime();
     const recurringAppointment = this.dataSource.filter((appointment) => appointment?.recurrenceRule)
 
     recurringAppointment.find((appointment) => {
@@ -42,15 +35,17 @@ export class AppComponent {
         dtstart: appointment?.startDate,
       })
       const betweenDate = rule.between(e.component.getStartViewDate(), e.component.getEndViewDate())
-      const recurrenceAppointmentEndDate = this.changeEndDate(appointment.endDate, appointmentData.endDate);
+      const appointmentDuration = appointment.endDate.getTime() - appointment.startDate.getTime();
 
       if (betweenDate.length > 0) {
         betweenDate.find((date) => {
+          const recurrentStartTime = date.getTime();
+          const recurrentEndTime = recurrentStartTime + appointmentDuration;
+
           if (
-            (appointmentData.startDate.getDate() === date.getDate()) &&
-            (appointmentData.startDate.getMonth() === date.getMonth()) &&
-            (appointmentData.startDate.getTime() >= date.getTime() && recurrenceAppointmentEndDate.getTime() >= appointmentData.endDate.getTime()))
-          {
+            startTime > recurrentStartTime && startTime < recurrentEndTime
+            || endTime > recurrentStartTime && endTime < recurrentEndTime
+          ) {
             e.cancel = true;
             this.popupVisible = true;
           }
