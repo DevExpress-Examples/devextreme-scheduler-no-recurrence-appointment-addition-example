@@ -38,7 +38,7 @@
 
 <script>
 import 'devextreme/dist/css/dx.common.css';
-import 'devextreme/dist/css/dx.light.css';
+import 'devextreme/dist/css/dx.material.blue.light.css';
 import { DxScheduler } from 'devextreme-vue/scheduler';
 import { DxPopup, DxPosition, DxToolbarItem } from 'devextreme-vue/popup';
 import { rrulestr, RRule } from 'rrule';

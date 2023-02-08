@@ -4,7 +4,7 @@ import { Popup, Position, ToolbarItem } from 'devextreme-react/popup';
 import { defaultData } from './data.js';
 import { rrulestr, RRule } from 'rrule';
 import 'devextreme/dist/css/dx.common.css';
-import 'devextreme/dist/css/dx.light.css';
+import 'devextreme/dist/css/dx.material.blue.light.css';
 import './App.css';
 
 const App = () => {
