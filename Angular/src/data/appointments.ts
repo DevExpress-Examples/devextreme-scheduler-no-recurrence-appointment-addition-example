@@ -1,10 +1,4 @@
-export interface Appointment {
-  text: string;
-  startDate: Date;
-  endDate: Date;
-  recurrenceRule: string;
-  allDay?: boolean;
-}
+import { Appointment } from '../app/interfaces';
 
 export const appointments: Appointment[] = [
   {

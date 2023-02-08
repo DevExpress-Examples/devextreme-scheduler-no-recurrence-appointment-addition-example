@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import Scheduler from 'devextreme-react/scheduler';
 import { Popup, Position, ToolbarItem } from 'devextreme-react/popup';
+import { isOverlapRecurrentAppointment } from './utils/isOverlapRecurrentAppointment';
 import { defaultData } from './data.js';
-import { rrulestr, RRule } from 'rrule';
 import 'devextreme/dist/css/dx.common.css';
 import 'devextreme/dist/css/dx.material.blue.light.css';
 import './App.css';
@@ -20,52 +20,27 @@ const App = () => {
         onClick: hideInfo,
     };
 
-    const formattedDate = (date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
-
-    const handleAppointmentActions = (e, appointmentData) => {
-        let startTime = appointmentData.startDate.getTime();
-        const endTime = appointmentData.endDate.getTime();
-        const recurringAppointment = defaultData.filter((appointment) => appointment?.recurrenceRule).map((appointment) => {
-            return {
+    const handleAppointmentActions = useCallback((event, newAppointment) => {
+        const recurrentAppointments = data.filter((appointment) => appointment?.recurrenceRule)
+            .map((appointment) => ({
                 ...appointment,
                 startDate: new Date(appointment.startDate),
                 endDate: new Date(appointment.endDate),
-            };
-        });
-
-        recurringAppointment.find((appointment) => {
-            const recurrenceOptions = rrulestr(appointment.recurrenceRule);
-            const rule = new RRule({
-                freq: recurrenceOptions.options.freq,
-                interval: recurrenceOptions.options.interval,
-                byweekday: recurrenceOptions.options.byweekday,
-                dtstart: appointment?.startDate,
-            })
-            const betweenDate = rule.between(e.component.getStartViewDate(), e.component.getEndViewDate())
-            const appointmentDuration = appointment.endDate.getTime() - appointment.startDate.getTime();
-
-            if (betweenDate.length > 0) {
-                betweenDate.find((date) => {
-                    let recurrentStartTime = date.getTime();
-
-                    if(appointment.allDay) {
-                        recurrentStartTime = recurrentStartTime - 86400000
-                        startTime = formattedDate(new Date(startTime)).getTime()
-                    }
-                    const recurrentEndTime = recurrentStartTime + appointmentDuration;
-
-                    if (
-                        startTime === recurrentStartTime
-                        || startTime > recurrentStartTime && startTime < recurrentEndTime
-                        || endTime > recurrentStartTime && endTime <= recurrentEndTime
-                    ) {
-                        e.cancel = true;
-                        setPopupVisible(true);
-                    }
-                })
+            }));
+        for (const recurrentAppointment of recurrentAppointments) {
+            const isOverlap = isOverlapRecurrentAppointment(event, recurrentAppointment, newAppointment);
+            if (isOverlap) {
+                event.cancel = true;
+                setPopupVisible(true)
             }
-        })
-    }
+        }
+    }, [data]);
+    const handleAppointmentAdding = useCallback((event) => {
+        handleAppointmentActions(event, event.appointmentData);
+    }, [handleAppointmentActions]);
+    const handleAppointmentUpdating = useCallback((event) => {
+        handleAppointmentActions(event, event.newData);
+    }, [handleAppointmentActions]);
 
     return (
         <>
@@ -104,12 +79,8 @@ const App = () => {
                 startDayHour={9}
                 width='100%'
                 height='100%'
-                onAppointmentAdding={(e) => {
-                    handleAppointmentActions(e, e.appointmentData);
-                }}
-                onAppointmentUpdating={(e) => {
-                    handleAppointmentActions(e, e.newData);
-                }}
+                onAppointmentAdding={handleAppointmentAdding}
+                onAppointmentUpdating={handleAppointmentUpdating}
             />
         </>
     );

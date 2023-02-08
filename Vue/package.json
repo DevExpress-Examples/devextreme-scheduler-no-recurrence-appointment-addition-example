@@ -9,8 +9,8 @@
   },
   "dependencies": {
     "core-js": "^3.6.5",
-    "devextreme": "^22.1.5",
-    "devextreme-vue": "^22.1.5",
+    "devextreme": "^22.2.4",
+    "devextreme-vue": "^22.2.4",
     "rrule": "^2.7.1",
     "vue": "^3.0.0"
   },

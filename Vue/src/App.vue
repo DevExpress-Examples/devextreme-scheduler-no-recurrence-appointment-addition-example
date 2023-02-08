@@ -41,7 +41,7 @@ import 'devextreme/dist/css/dx.common.css';
 import 'devextreme/dist/css/dx.material.blue.light.css';
 import { DxScheduler } from 'devextreme-vue/scheduler';
 import { DxPopup, DxPosition, DxToolbarItem } from 'devextreme-vue/popup';
-import { rrulestr, RRule } from 'rrule';
+import { isOverlapRecurrentAppointment } from './utils/isOverlapRecurrentAppointment.js';
 import { defaultData } from './data';
 
 export default {
@@ -65,53 +65,21 @@ export default {
     }
   },
   methods: {
-    formattedDate(date) {
-      return  new Date(date.getFullYear(), date.getMonth(), date.getDate())
-    },
-    handleAppointmentActions(e, appointmentData) {
-      let startTime = appointmentData.startDate.getTime();
-      const endTime = appointmentData.endDate.getTime();
-      const recurringAppointment = defaultData.filter((appointment) => appointment?.recurrenceRule).map((appointment) => {
-        return {
-          ...appointment,
-          startDate: new Date(appointment.startDate),
-          endDate: new Date(appointment.endDate),
-        };
-      });
-
-      recurringAppointment.find((appointment) => {
-        const recurrenceOptions = rrulestr(appointment.recurrenceRule);
-        const rule = new RRule({
-          freq: recurrenceOptions.options.freq,
-          interval: recurrenceOptions.options.interval,
-          byweekday: recurrenceOptions.options.byweekday,
-          dtstart: appointment?.startDate,
-        })
-        const betweenDate = rule.between(e.component.getStartViewDate(), e.component.getEndViewDate())
-        const appointmentDuration = appointment.endDate.getTime() - appointment.startDate.getTime();
-
-        if (betweenDate.length > 0) {
-          betweenDate.find((date) => {
-            let recurrentStartTime = date.getTime();
-
-            if(appointment.allDay) {
-              recurrentStartTime = recurrentStartTime - 86400000
-              startTime = this.formattedDate(new Date(startTime)).getTime()
-            }
-            const recurrentEndTime = recurrentStartTime + appointmentDuration;
-
-            if (
-                startTime === recurrentStartTime
-                || startTime > recurrentStartTime && startTime < recurrentEndTime
-                || endTime > recurrentStartTime && endTime <= recurrentEndTime
-            ) {
-              e.cancel = true;
-              this.popupVisible = true;
-            }
-          })
+    handleAppointmentActions(event, newAppointment) {
+      const recurrentAppointments = defaultData.filter((appointment) => appointment?.recurrenceRule)
+          .map((appointment) => ({
+            ...appointment,
+            startDate: new Date(appointment.startDate),
+            endDate: new Date(appointment.endDate),
+          }));
+      for (const recurrentAppointment of recurrentAppointments) {
+        const isOverlap = isOverlapRecurrentAppointment(event, recurrentAppointment, newAppointment);
+        if (isOverlap) {
+          event.cancel = true;
+          this.popupVisible = true;
         }
-      })
-    }
+      }
+    },
   }
 }
 </script>
