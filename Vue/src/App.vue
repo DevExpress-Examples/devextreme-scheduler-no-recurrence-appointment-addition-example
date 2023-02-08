@@ -65,10 +65,19 @@ export default {
     }
   },
   methods: {
+    formattedDate(date) {
+      return  new Date(date.getFullYear(), date.getMonth(), date.getDate())
+    },
     handleAppointmentActions(e, appointmentData) {
-      const startTime = appointmentData.startDate.getTime();
+      let startTime = appointmentData.startDate.getTime();
       const endTime = appointmentData.endDate.getTime();
-      const recurringAppointment = defaultData.filter((appointment) => appointment?.recurrenceRule)
+      const recurringAppointment = defaultData.filter((appointment) => appointment?.recurrenceRule).map((appointment) => {
+        return {
+          ...appointment,
+          startDate: new Date(appointment.startDate),
+          endDate: new Date(appointment.endDate),
+        };
+      });
 
       recurringAppointment.find((appointment) => {
         const recurrenceOptions = rrulestr(appointment.recurrenceRule);
@@ -83,12 +92,18 @@ export default {
 
         if (betweenDate.length > 0) {
           betweenDate.find((date) => {
-            const recurrentStartTime = date.getTime();
+            let recurrentStartTime = date.getTime();
+
+            if(appointment.allDay) {
+              recurrentStartTime = recurrentStartTime - 86400000
+              startTime = this.formattedDate(new Date(startTime)).getTime()
+            }
             const recurrentEndTime = recurrentStartTime + appointmentDuration;
 
             if (
-                startTime > recurrentStartTime && startTime < recurrentEndTime
-                || endTime > recurrentStartTime && endTime < recurrentEndTime
+                startTime === recurrentStartTime
+                || startTime > recurrentStartTime && startTime < recurrentEndTime
+                || endTime > recurrentStartTime && endTime <= recurrentEndTime
             ) {
               e.cancel = true;
               this.popupVisible = true;

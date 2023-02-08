@@ -3,9 +3,17 @@ export interface Appointment {
   startDate: Date;
   endDate: Date;
   recurrenceRule: string;
+  allDay?: boolean;
 }
 
 export const appointments: Appointment[] = [
+  {
+    text: 'Book Flights to San Fran for Sales Trip',
+    startDate: new Date(2020, 10, 26),
+    endDate: new Date(2020, 10, 26),
+    allDay: true,
+    recurrenceRule: 'FREQ=WEEKLY;BYDAY=TH',
+  },
   {
     text: 'Watercolor Landscape',
     startDate: new Date(2020, 10, 1, 10, 30),
@@ -16,6 +24,6 @@ export const appointments: Appointment[] = [
     text: 'Marshmallow',
     startDate: new Date(2020, 10, 1, 15),
     endDate: new Date(2020, 10, 1, 17, 30),
-    recurrenceRule: 'FREQ=WEEKLY;BYDAY=TU,TH',
+    recurrenceRule: 'FREQ=WEEKLY;BYDAY=TU,FR',
   }
 ];
