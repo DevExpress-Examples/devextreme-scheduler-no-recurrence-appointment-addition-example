@@ -7,29 +7,39 @@ const MS_IN_HOUR = 60000;
 function resetDateTime(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
-
-function resetAllDayStartDateTime(date: Date): Date {
-  return resetDateTime(new Date(date.getTime() + new Date().getTimezoneOffset() * MS_IN_HOUR));
+function getAllDayStartTime(date: Date): number {
+  return resetDateTime(new Date(date.getTime() + date.getTimezoneOffset() * MS_IN_HOUR)).getTime();
 }
-
+function getAllDayEndTime(endTime: number): number {
+  let endDate = new Date(endTime);
+  endDate = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate() + 1);
+  return endDate.getTime();
+}
 function isOverlapAllDayRecurrentAppointment(
   recurrentStartDatesInView: Date[],
   recurrentBaseAppointment: Appointment,
   newAppointment: Appointment,
 ): boolean {
-  const newStartTime = resetDateTime(newAppointment.startDate).getTime();
+  const recurrentBaseStartTime = resetDateTime(recurrentBaseAppointment.startDate).getTime();
+  const recurrentBaseEndTime = recurrentBaseAppointment.endDate.getTime();
+  const recurrentDuration = recurrentBaseEndTime - recurrentBaseStartTime;
+  const newStartTime = newAppointment.startDate.getTime();
+  const newEndTime = newAppointment.endDate.getTime();
 
   for(const recurrentStartDate of recurrentStartDatesInView) {
-    const recurrentStartTime = resetAllDayStartDateTime(recurrentStartDate).getTime();
+    const recurrentStartTime = getAllDayStartTime(recurrentStartDate);
+    const recurrentEndTime = getAllDayEndTime(recurrentStartTime + recurrentDuration);
 
-    if (newStartTime === recurrentStartTime) {
+    if (
+      newStartTime > recurrentStartTime && newStartTime < recurrentEndTime
+      || newEndTime > recurrentStartTime && newEndTime <= recurrentEndTime
+      || recurrentStartTime > newStartTime && recurrentStartTime < newEndTime
+    ) {
       return true;
     }
   }
-
   return false;
 }
-
 function isOverlapUsualRecurrentAppointment(
   recurrentStartDatesInView: Date[],
   recurrentBaseAppointment: Appointment,
@@ -45,16 +55,15 @@ function isOverlapUsualRecurrentAppointment(
     const recurrentStartTime = recurrentStartDate.getTime();
     const recurrentEndTime = recurrentStartTime + recurrentDuration;
 
-    if (newStartTime > recurrentStartTime && newStartTime < recurrentEndTime
+    if (
+      newStartTime > recurrentStartTime && newStartTime < recurrentEndTime
       || newEndTime > recurrentStartTime && newEndTime < recurrentEndTime
       || recurrentStartTime > newStartTime && recurrentStartTime < newEndTime) {
       return true;
     }
   }
-
   return false;
 }
-
 export function isOverlapRecurrentAppointment(
   event: AppointmentAddingEvent,
   recurrentAppointment: Appointment,
@@ -71,16 +80,18 @@ export function isOverlapRecurrentAppointment(
     event.component.getStartViewDate(),
     event.component.getEndViewDate()
   );
-
-  return recurrentAppointment.allDay
-    ? isOverlapAllDayRecurrentAppointment(
+  if (newAppointment.allDay && recurrentAppointment.allDay) {
+    return isOverlapAllDayRecurrentAppointment(
       recurrentStartDatesInView,
       recurrentAppointment,
       newAppointment,
     )
-    : isOverlapUsualRecurrentAppointment(
+  }
+  if (!newAppointment.allDay && !recurrentAppointment.allDay) {
+    return isOverlapUsualRecurrentAppointment(
       recurrentStartDatesInView,
       recurrentAppointment,
-      newAppointment
-    );
+      newAppointment    );
+  }
+  return false;
 }
