@@ -6,8 +6,27 @@ function resetDateTime(date) {
     return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
-function resetAllDayStartDateTime(date) {
-    return resetDateTime(new Date(date.getTime() + new Date().getTimezoneOffset() * MS_IN_HOUR));
+function getAllDayStartTime(date) {
+    return resetDateTime(new Date(date.getTime() + date.getTimezoneOffset() * MS_IN_HOUR)).getTime();
+}
+
+function getAllDayEndTime(endTime) {
+    let endDate = new Date(endTime);
+    endDate = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate() + 1);
+    return endDate.getTime();
+}
+
+function convertRecurrenceExceptions(dateStrings) {
+    return dateStrings.split(",").map(dateString => {
+        return new Date(dateString.slice(0, 4) + "-" + dateString.slice(4, 6) + "-" + dateString.slice(6, 8) + "T" + dateString.slice(9, 11) + ":" + dateString.slice(11, 13) + ":" + dateString.slice(13, 15) + "Z");
+    });
+}
+
+function checkRecurrenceException(recurrentAppointment, newAppointment) {
+    return !convertRecurrenceExceptions(recurrentAppointment).filter((exceptionDate) => {
+        return newAppointment.startDate.getTime() === exceptionDate.getTime()
+            || newAppointment.endDate.getTime() === exceptionDate.getTime();
+    });
 }
 
 function isOverlapAllDayRecurrentAppointment(
@@ -15,16 +34,24 @@ function isOverlapAllDayRecurrentAppointment(
     recurrentBaseAppointment,
     newAppointment,
 ) {
-    const newStartTime = resetDateTime(newAppointment.startDate).getTime();
+    const recurrentBaseStartTime = resetDateTime(recurrentBaseAppointment.startDate).getTime();
+    const recurrentBaseEndTime = recurrentBaseAppointment.endDate.getTime();
+    const recurrentDuration = recurrentBaseEndTime - recurrentBaseStartTime;
+    const newStartTime = newAppointment.startDate.getTime();
+    const newEndTime = newAppointment.endDate.getTime();
 
     for(const recurrentStartDate of recurrentStartDatesInView) {
-        const recurrentStartTime = resetAllDayStartDateTime(recurrentStartDate).getTime();
+        const recurrentStartTime = getAllDayStartTime(recurrentStartDate);
+        const recurrentEndTime = getAllDayEndTime(recurrentStartTime + recurrentDuration);
 
-        if (newStartTime === recurrentStartTime) {
+        if (
+            newStartTime > recurrentStartTime && newStartTime < recurrentEndTime
+            || newEndTime > recurrentStartTime && newEndTime < recurrentEndTime
+            || recurrentStartTime > newStartTime && recurrentStartTime < newEndTime
+        ) {
             return true;
         }
     }
-
     return false;
 }
 
@@ -43,13 +70,13 @@ function isOverlapUsualRecurrentAppointment(
         const recurrentStartTime = recurrentStartDate.getTime();
         const recurrentEndTime = recurrentStartTime + recurrentDuration;
 
-        if (newStartTime > recurrentStartTime && newStartTime < recurrentEndTime
+        if (
+            newStartTime > recurrentStartTime && newStartTime < recurrentEndTime
             || newEndTime > recurrentStartTime && newEndTime < recurrentEndTime
             || recurrentStartTime > newStartTime && recurrentStartTime < newEndTime) {
             return true;
         }
     }
-
     return false;
 }
 
@@ -70,15 +97,24 @@ export function isOverlapRecurrentAppointment(
         event.component.getEndViewDate()
     );
 
-    return recurrentAppointment.allDay
-        ? isOverlapAllDayRecurrentAppointment(
+    if(recurrentAppointment.recurrenceException) {
+        return checkRecurrenceException(
+            recurrentAppointment.recurrenceException,
+            newAppointment
+        )
+    }
+    if (newAppointment.allDay && recurrentAppointment.allDay) {
+        return isOverlapAllDayRecurrentAppointment(
             recurrentStartDatesInView,
             recurrentAppointment,
             newAppointment,
         )
-        : isOverlapUsualRecurrentAppointment(
+    }
+    if (!newAppointment.allDay && !recurrentAppointment.allDay) {
+        return isOverlapUsualRecurrentAppointment(
             recurrentStartDatesInView,
             recurrentAppointment,
-            newAppointment
-        );
+            newAppointment    );
+    }
+    return false;
 }
