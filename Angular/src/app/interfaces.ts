@@ -4,6 +4,7 @@ export interface CloseButtonOptions {
 }
 
 export interface Appointment {
+  recurrenceException?: string;
   text: string;
   startDate: Date;
   endDate: Date;
