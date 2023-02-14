@@ -20,27 +20,53 @@ const App = () => {
         onClick: hideInfo,
     };
 
-    const handleAppointmentActions = useCallback((event, newAppointment) => {
-        const recurrentAppointments = data.filter((appointment) => appointment?.recurrenceRule)
+    const handleAppointmentActions = (
+        event,
+        recurrentAppointments,
+        newAppointment) => {
+        for (const recurrentAppointment of recurrentAppointments) {
+            const isOverlap = isOverlapRecurrentAppointment(
+                event,
+                recurrentAppointment,
+                newAppointment);
+            if (isOverlap) {
+                cancelAppointmentAdding(event);
+            }
+        }
+    }
+
+    const getRecurrentAppointments = useCallback(() => {
+        return data
+            .filter((appointment) => appointment?.recurrenceRule)
             .map((appointment) => ({
                 ...appointment,
                 startDate: new Date(appointment.startDate),
                 endDate: new Date(appointment.endDate),
             }));
-        for (const recurrentAppointment of recurrentAppointments) {
-            const isOverlap = isOverlapRecurrentAppointment(event, recurrentAppointment, newAppointment);
-            if (isOverlap) {
-                event.cancel = true;
-                setPopupVisible(true)
-            }
-        }
     }, [data]);
-    const handleAppointmentAdding = useCallback((event) => {
-        handleAppointmentActions(event, event.appointmentData);
+
+    const handleAppointmentAdd = useCallback((event) => {
+        handleAppointmentActions(
+            event,
+            getRecurrentAppointments(),
+            event.appointmentData,
+        );
     }, [handleAppointmentActions]);
-    const handleAppointmentUpdating = useCallback((event) => {
-        handleAppointmentActions(event, event.newData);
+
+    const handleAppointmentUpdate = useCallback((event) => {
+        const recurrentAppointments = getRecurrentAppointments()
+            .filter((appointment) => appointment !== event.oldData);
+        handleAppointmentActions(
+            event,
+            recurrentAppointments,
+            event.newData,
+        )
     }, [handleAppointmentActions]);
+
+    const cancelAppointmentAdding = (event) => {
+        event.cancel = true;
+        setPopupVisible(true)
+    }
 
     return (
         <>
@@ -79,8 +105,9 @@ const App = () => {
                 startDayHour={9}
                 width='100%'
                 height='100%'
-                onAppointmentAdding={handleAppointmentAdding}
-                onAppointmentUpdating={handleAppointmentUpdating}
+                allDayPanelMode='hidden'
+                onAppointmentAdding={handleAppointmentAdd}
+                onAppointmentUpdating={handleAppointmentUpdate}
             />
         </>
     );
