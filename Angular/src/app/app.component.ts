@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { isOverlapRecurrentAppointment } from '../utils/isOverlapRecurrentAppointment';
 import { appointments } from '../data/appointments';
 import { CloseButtonOptions, Appointment } from './interfaces';
-import { AppointmentAddingEvent } from 'devextreme/ui/scheduler';
+import { AppointmentAddingEvent, AppointmentUpdatingEvent } from 'devextreme/ui/scheduler';
 
 @Component({
   selector: 'demo-app',
@@ -11,9 +11,9 @@ import { AppointmentAddingEvent } from 'devextreme/ui/scheduler';
 })
 
 export class AppComponent {
-  dataSource: Appointment[] = appointments;
-  currentDate: Date = new Date(2022, 9, 1);
-  popupVisible: boolean = false;
+  dataSource = appointments;
+  currentDate = new Date(2022, 9, 1);
+  popupVisible = false;
   closeButtonOptions: CloseButtonOptions  = {
     text: 'Close',
     onClick: () => {
@@ -21,15 +21,37 @@ export class AppComponent {
     }
   };
 
-  handleAppointmentActions(event: AppointmentAddingEvent, newAppointment: Appointment): void {
-    const recurrentAppointments = this.getRecurrentAppointments();
+  handleAppointmentAdd(
+    event: AppointmentAddingEvent
+  ): void {
+    this.handleAppointmentActions(
+      event,
+      this.getRecurrentAppointments(),
+      event.appointmentData as Appointment,
+    );
+  }
+  handleAppointmentUpdate(
+    event: AppointmentUpdatingEvent,
+  ): void {
+    const recurrentAppointments = this.getRecurrentAppointments()
+      .filter((appointment) => appointment !== event.oldData);
+    this.handleAppointmentActions(
+      event,
+      recurrentAppointments,
+      event.newData as Appointment,
+    )
+  }
+  private handleAppointmentActions(
+    event: AppointmentAddingEvent | AppointmentUpdatingEvent,
+    recurrentAppointments: Appointment[],
+    newAppointment: Appointment): void {
     for(const recurrentAppointment of recurrentAppointments) {
       const isOverlap = isOverlapRecurrentAppointment(
-        event,
+        event as AppointmentAddingEvent,
         recurrentAppointment,
         newAppointment);
       if (isOverlap) {
-        this.cancelAppointmentAdding(event);
+        this.cancelAppointmentAdding(event as AppointmentAddingEvent);
       }
     }
   }

@@ -1,11 +1,12 @@
 <div>
   <dx-scheduler
-    (onAppointmentAdding)='handleAppointmentActions($event, $event.appointmentData)'
-    (onAppointmentUpdating)='handleAppointmentActions($event, $event.newData)'
+    (onAppointmentAdding)='handleAppointmentAdd($event)'
+    (onAppointmentUpdating)='handleAppointmentUpdate($event)'
     [dataSource]='dataSource'
     [views]='[{type: "week"}]'
     currentView='week'
     [currentDate]='currentDate'
+    [showAllDayPanel]="false"
     [startDayHour]='9'
     [firstDayOfWeek]='0'
     width='100%'
