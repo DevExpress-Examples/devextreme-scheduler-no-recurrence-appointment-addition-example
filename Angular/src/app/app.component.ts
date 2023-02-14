@@ -11,6 +11,7 @@ import { AppointmentAddingEvent, AppointmentUpdatingEvent } from 'devextreme/ui/
 })
 
 export class AppComponent {
+  allDayPanelMode = 'hidden';
   dataSource = appointments;
   currentDate = new Date(2022, 9, 1);
   popupVisible = false;
@@ -30,6 +31,7 @@ export class AppComponent {
       event.appointmentData as Appointment,
     );
   }
+
   handleAppointmentUpdate(
     event: AppointmentUpdatingEvent,
   ): void {
@@ -41,6 +43,7 @@ export class AppComponent {
       event.newData as Appointment,
     )
   }
+
   private handleAppointmentActions(
     event: AppointmentAddingEvent | AppointmentUpdatingEvent,
     recurrentAppointments: Appointment[],
