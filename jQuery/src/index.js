@@ -11,11 +11,12 @@ $(() => {
         startDayHour: 9,
         height: '100%',
         width: '100%',
+        allDayPanelMode: 'hidden',
         onAppointmentAdding: (e) => {
-            handleAppointmentActions(e, e.appointmentData, popup);
+            handleAppointmentAdd(e, popup);
         },
         onAppointmentUpdating: (e) => {
-            handleAppointmentActions(e, e.newData, popup);
+            handleAppointmentUpdate(e, popup);
         }
     })
 });
@@ -50,18 +51,51 @@ const popup = $('#popup').dxPopup({
     }],
 }).dxPopup('instance');
 
-const handleAppointmentActions = (event, newAppointment) => {
-    const recurrentAppointments = defaultData.filter((appointment) => appointment?.recurrenceRule)
+const handleAppointmentAdd = (event, popup) => {
+    handleAppointmentActions(
+        event,
+        getRecurrentAppointments(),
+        event.appointmentData,
+        popup
+    );
+}
+const handleAppointmentUpdate = (event, popup) => {
+    const recurrentAppointments = getRecurrentAppointments()
+        .filter((appointment) => appointment !== event.oldData);
+    handleAppointmentActions(
+        event,
+        recurrentAppointments,
+        event.newData,
+        popup
+    )
+}
+const handleAppointmentActions = (
+    event,
+    recurrentAppointments,
+    newAppointment,
+    popup) => {
+    for (const recurrentAppointment of recurrentAppointments) {
+        const isOverlap = isOverlapRecurrentAppointment(
+            event,
+            recurrentAppointment,
+            newAppointment);
+        if (isOverlap) {
+            cancelAppointmentAdding(event, popup);
+        }
+    }
+}
+
+const getRecurrentAppointments = () => {
+    return defaultData
+        .filter((appointment) => appointment?.recurrenceRule)
         .map((appointment) => ({
             ...appointment,
             startDate: new Date(appointment.startDate),
             endDate: new Date(appointment.endDate),
         }));
-    for (const recurrentAppointment of recurrentAppointments) {
-        const isOverlap = isOverlapRecurrentAppointment(event, recurrentAppointment, newAppointment);
-        if (isOverlap) {
-            event.cancel = true;
-            popup.show();
-        }
-    }
-};
+}
+
+const cancelAppointmentAdding = (event, popup) => {
+    event.cancel = true;
+    popup.show();
+}
