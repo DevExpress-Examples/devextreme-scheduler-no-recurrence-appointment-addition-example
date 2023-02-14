@@ -23,14 +23,15 @@
     <p>There is a recurrent appointment in this cell.</p>
   </DxPopup>
   <DxScheduler
-      :on-appointment-adding='(e) => handleAppointmentActions(e, e.appointmentData)'
-      :on-appointment-updating='(e) => { handleAppointmentActions(e, e.newData); }'
+      :on-appointment-adding='handleAppointmentAdd'
+      :on-appointment-updating='handleAppointmentUpdate'
       :data-source='data'
       :views='[{type: "week"}]'
       :first-day-of-week='0'
-      current-view='week'
+      :all-day-panel-mode='allDayPanelMode'
       :current-date='new Date(2020, 10, 25)'
       :start-day-hour='9'
+      current-view='week'
       width='100%'
       height='100%'
   />
@@ -54,6 +55,7 @@ export default {
   },
   data() {
     return {
+      allDayPanelMode: 'hidden',
       popupVisible: false,
       data: defaultData,
       closeButtonOptions: {
@@ -65,21 +67,49 @@ export default {
     }
   },
   methods: {
-    handleAppointmentActions(event, newAppointment) {
-      const recurrentAppointments = defaultData.filter((appointment) => appointment?.recurrenceRule)
+    handleAppointmentActions (
+        event,
+        recurrentAppointments,
+        newAppointment) {
+      for (const recurrentAppointment of recurrentAppointments) {
+        const isOverlap = isOverlapRecurrentAppointment(
+            event,
+            recurrentAppointment,
+            newAppointment);
+        if (isOverlap) {
+          this.cancelAppointmentAdding(event);
+        }
+      }
+    },
+    getRecurrentAppointments() {
+      return defaultData
+          .filter((appointment) => appointment?.recurrenceRule)
           .map((appointment) => ({
             ...appointment,
             startDate: new Date(appointment.startDate),
             endDate: new Date(appointment.endDate),
           }));
-      for (const recurrentAppointment of recurrentAppointments) {
-        const isOverlap = isOverlapRecurrentAppointment(event, recurrentAppointment, newAppointment);
-        if (isOverlap) {
-          event.cancel = true;
-          this.popupVisible = true;
-        }
-      }
     },
+    handleAppointmentAdd(event) {
+      this.handleAppointmentActions(
+          event,
+          this.getRecurrentAppointments(),
+          event.appointmentData,
+      );
+    },
+    handleAppointmentUpdate(event) {
+      const recurrentAppointments = this.getRecurrentAppointments()
+          .filter((appointment) => appointment !== event.oldData);
+      this.handleAppointmentActions(
+          event,
+          recurrentAppointments,
+          event.newData,
+      )
+    },
+    cancelAppointmentAdding(event) {
+      event.cancel = true;
+      this.popupVisible = true;
+    }
   }
 }
 </script>
