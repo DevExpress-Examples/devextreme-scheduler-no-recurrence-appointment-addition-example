@@ -77,7 +77,8 @@ export default {
             recurrentAppointment,
             newAppointment);
         if (isOverlap) {
-          this.cancelAppointmentAdding(event);
+          event.cancel = true;
+          this.popupVisible = true;
         }
       }
     },
@@ -105,10 +106,6 @@ export default {
           recurrentAppointments,
           event.newData,
       )
-    },
-    cancelAppointmentAdding(event) {
-      event.cancel = true;
-      this.popupVisible = true;
     }
   }
 }
