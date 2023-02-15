@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useRef } from 'react';
 import Scheduler from 'devextreme-react/scheduler';
 import { Popup, Position, ToolbarItem } from 'devextreme-react/popup';
 import { isOverlapRecurrentAppointment } from './utils/isOverlapRecurrentAppointment';
@@ -11,16 +11,14 @@ const App = () => {
     const [popupVisible, setPopupVisible] = useState(false);
     const [data] = useState(defaultData);
 
-    const hideInfo = () => {
-        setPopupVisible(false);
-    }
-
-    const closeButtonOptions = {
+    const closeButtonOptions = useRef({
         text: 'Close',
-        onClick: hideInfo,
-    };
+        onClick: () => {
+            setPopupVisible(false);
+        },
+    });
 
-    const handleAppointmentActions = (
+    const handleAppointmentActions = useCallback((
         event,
         recurrentAppointments,
         newAppointment) => {
@@ -30,10 +28,11 @@ const App = () => {
                 recurrentAppointment,
                 newAppointment);
             if (isOverlap) {
-                cancelAppointmentAdding(event);
+                event.cancel = true;
+                setPopupVisible(true)
             }
         }
-    }
+    }, []);
 
     const getRecurrentAppointments = useCallback(() => {
         return data
@@ -51,7 +50,7 @@ const App = () => {
             getRecurrentAppointments(),
             event.appointmentData,
         );
-    }, [handleAppointmentActions]);
+    }, [handleAppointmentActions, getRecurrentAppointments]);
 
     const handleAppointmentUpdate = useCallback((event) => {
         const recurrentAppointments = getRecurrentAppointments()
@@ -61,18 +60,12 @@ const App = () => {
             recurrentAppointments,
             event.newData,
         )
-    }, [handleAppointmentActions]);
-
-    const cancelAppointmentAdding = (event) => {
-        event.cancel = true;
-        setPopupVisible(true)
-    }
+    }, [handleAppointmentActions, getRecurrentAppointments]);
 
     return (
         <>
             <Popup
                 visible={popupVisible}
-                onHiding={hideInfo}
                 dragEnabled={false}
                 hideOnOutsideClick={true}
                 showCloseButton={false}
