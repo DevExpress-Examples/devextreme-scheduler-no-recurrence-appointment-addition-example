@@ -54,7 +54,8 @@ export class AppComponent {
         recurrentAppointment,
         newAppointment);
       if (isOverlap) {
-        this.cancelAppointmentAdding(event as AppointmentAddingEvent);
+        event.cancel = true;
+        this.popupVisible = true;
       }
     }
   }
@@ -67,10 +68,5 @@ export class AppComponent {
         startDate: new Date(appointment.startDate),
         endDate: new Date(appointment.endDate),
       }));
-  }
-
-  private cancelAppointmentAdding(event: AppointmentAddingEvent): void {
-    event.cancel = true;
-    this.popupVisible = true;
   }
 }
