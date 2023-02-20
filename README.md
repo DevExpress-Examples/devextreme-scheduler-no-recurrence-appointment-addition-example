@@ -7,7 +7,7 @@
 # DevExtreme Scheduler - How to prevent adding a new appointment or drag exist one to the cell with already recurrence date
 This example demonstrates how to prevent adding a new appointment or drag exist one to the cell with already recurrence date
 
-![demo](https://user-images.githubusercontent.com/53352872/218763367-dca6b472-8535-478e-a994-b1ab4e00fac9.gif)
+<div align="center"><img src="https://user-images.githubusercontent.com/53352872/218763367-dca6b472-8535-478e-a994-b1ab4e00fac9.gif" /></div>
 
 ## Files to Review
 
